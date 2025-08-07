@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscador de Precios Online</title>
+    <!-- Incluyendo Tailwind CSS para un diseño moderno y responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/index.css">
+    <script src="js/index.js"></script>
+</head>
+<body class="bg-gray-100">
+
+    <div class="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <!-- Encabezado -->
+            <div class="p-6 bg-gray-50 border-b border-gray-200">
+                <h1 class="text-2xl font-bold text-gray-800">Buscador de Precios Online</h1>
+                <p class="mt-1 text-sm text-gray-600">Ingresa un producto para buscar precios, vendedores y enlaces en Argentina.</p>
+            </div>
+
+            <!-- Formulario de búsqueda -->
+            <div class="p-6">
+                <form id="search-form" class="flex flex-col sm:flex-row gap-3">
+                    <input type="text" id="product-search" name="product-search" placeholder="Ej: Coca-Cola 2.25L" class="flex-grow block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                    <button type="submit" class="w-full sm:w-auto inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                        Buscar Precios
+                    </button>
+                </form>
+            </div>
+
+            <!-- Contenedor de Resultados -->
+            <div id="results-container" class="p-6 bg-white">
+                <!-- El mensaje inicial, el loader y los resultados se mostrarán aquí -->
+                 <div id="initial-message" class="text-center text-gray-500 py-10">
+                    <p>Los resultados de tu búsqueda aparecerán aquí.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
