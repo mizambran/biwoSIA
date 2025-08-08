@@ -7,7 +7,7 @@
         // --- ¡IMPORTANTE! Configura tu API Key aquí ---
         // 1. Obtén tu clave desde Google AI Studio: https://aistudio.google.com/app/apikey
         // 2. Reemplaza el texto "AQUÍ_VA_TU_API_KEY" con tu clave.
-        const apiKey = "AQUÍ_VA_TU_API_KEY";
+        const apiKey = "AIzaSyB2GuADuiENpiy0H5UIlf0JHi8gclZpJiM";
 
         // --- Función para mostrar el indicador de carga ---
         function showLoader() {
