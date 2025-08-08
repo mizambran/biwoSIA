@@ -1,10 +1,11 @@
-*{
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+/* CSS proporcionado por el usuario, ahora inmerso para que sea un solo archivo */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-/* Usando la fuente Inter para un look más limpio */
+        /* Usando la fuente Inter para un look más limpio */
         body {
             font-family: 'Inter', sans-serif;
         }
