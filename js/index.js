@@ -2,13 +2,7 @@
         const searchForm = document.getElementById('search-form');
         const productSearchInput = document.getElementById('product-search');
         const resultsContainer = document.getElementById('results-container');
-        const initialMessage = document.getElementById('initial-message');
 
-        // --- ¡IMPORTANTE! Configura tu API Key aquí ---
-        // Lee la clave de API desde una variable de entorno en Netlify.
-        // Asegúrate de configurar GEMINI_API_KEY en la configuración de Netlify.
-        const apiKey = "AIzaSyB2GuADuiENpiy0H5UIlf0JHi8gclZpJiM";
-        
         // --- Función para mostrar el indicador de carga ---
         function showLoader() {
             resultsContainer.innerHTML = '<div class="flex justify-center py-10"><div class="loader"></div></div>';
@@ -68,7 +62,6 @@
             resultsContainer.innerHTML = `<p class="text-center text-red-500 py-10">${message}</p>`;
         }
 
-
         // --- Event Listener para el formulario de búsqueda ---
         searchForm.addEventListener('submit', async function(event) {
             event.preventDefault();
@@ -77,40 +70,17 @@
             
             showLoader();
             
-            const prompt = `Busca en internet precios para el producto "${searchTerm}" que se vendan en Argentina. Devuelve una lista de resultados.`;
-
-            // Configuración del payload para la API
-            const payload = {
-                contents: [{ role: "user", parts: [{ text: prompt }] }],
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: "ARRAY",
-                        items: {
-                            type: "OBJECT",
-                            properties: {
-                                "producto": { "type": "STRING", "description": "Nombre completo del producto encontrado." },
-                                "vendedor": { "type": "STRING", "description": "Nombre de la tienda o supermercado que lo vende." },
-                                "precio": { "type": "STRING", "description": "Precio del producto con su moneda." },
-                                "enlace": { "type": "STRING", "description": "URL directa a la página del producto." }
-                            },
-                            required: ["producto", "vendedor", "precio", "enlace"]
-                        }
-                    }
-                }
-            };
-            
             // Lógica para reintentos con exponential backoff
             const maxRetries = 3;
             let currentRetry = 0;
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            const apiUrl = `/api/search`; // Nuevo endpoint de la función de Netlify
 
             while (currentRetry < maxRetries) {
                 try {
                     const response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
+                        body: JSON.stringify({ searchTerm }) // Envía solo el término de búsqueda
                     });
                     
                     if (!response.ok) {
@@ -126,10 +96,9 @@
                     }
 
                     const result = await response.json();
-                    const textPart = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (textPart) {
-                        const products = JSON.parse(textPart);
-                        displayResults(products);
+                    
+                    if (result.products) {
+                        displayResults(result.products);
                         return; // Salir del bucle si es exitoso
                     } else {
                         throw new Error("No se pudo obtener una respuesta válida del modelo.");
