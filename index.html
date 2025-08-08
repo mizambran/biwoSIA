@@ -9,9 +9,32 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/index.css">
-    <script src="index.html"></script>
-    <script src="netlify/functions/search.js"></script>
+    <style>
+        /* CSS proporcionado por el usuario, ahora inmerso para que sea un solo archivo */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Usando la fuente Inter para un look más limpio */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Estilo para el indicador de carga */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body class="bg-gray-100">
 
@@ -42,5 +65,163 @@
             </div>
         </div>
     </div>
+
+    <script>
+        // --- Referencias a los elementos del DOM ---
+        const searchForm = document.getElementById('search-form');
+        const productSearchInput = document.getElementById('product-search');
+        const resultsContainer = document.getElementById('results-container');
+        const initialMessage = document.getElementById('initial-message');
+
+        // --- ¡IMPORTANTE! Configura tu API Key aquí ---
+        // 1. Obtén tu clave de API desde Google AI Studio: https://aistudio.google.com/app/apikey
+        // 2. Pega la clave de API entre las comillas.
+        const apiKey = "";
+        
+        // --- Función para mostrar el indicador de carga ---
+        function showLoader() {
+            resultsContainer.innerHTML = '<div class="flex justify-center py-10"><div class="loader"></div></div>';
+        }
+
+        // --- Función para mostrar los resultados ---
+        function displayResults(products) {
+            resultsContainer.innerHTML = ''; // Limpiar resultados anteriores
+            if (!products || products.length === 0) {
+                resultsContainer.innerHTML = '<p class="text-center text-gray-500 py-10">No se encontraron resultados para tu búsqueda.</p>';
+                return;
+            }
+
+            const resultsList = document.createElement('div');
+            resultsList.className = 'space-y-4';
+
+            products.forEach(product => {
+                const card = document.createElement('div');
+                card.className = 'p-4 border rounded-lg hover:shadow-md transition-shadow';
+
+                const productName = document.createElement('h3');
+                productName.className = 'text-lg font-semibold text-gray-800';
+                productName.textContent = product.producto || 'Producto no especificado';
+
+                const seller = document.createElement('p');
+                seller.className = 'text-sm text-gray-600';
+                seller.textContent = `Vendido por: ${product.vendedor || 'Vendedor no especificado'}`;
+
+                const price = document.createElement('p');
+                price.className = 'text-lg font-bold text-indigo-600 mt-2';
+                price.textContent = product.precio || 'Precio no disponible';
+
+                const link = document.createElement('a');
+                link.href = product.enlace || '#';
+                link.textContent = 'Ir al sitio web';
+                link.target = '_blank'; // Abrir en nueva pestaña
+                link.rel = 'noopener noreferrer';
+                link.className = 'inline-block mt-3 text-sm font-medium text-indigo-500 hover:text-indigo-700';
+                
+                link.innerHTML += ' &rarr;';
+
+                card.appendChild(productName);
+                card.appendChild(seller);
+                card.appendChild(price);
+                if(product.enlace) {
+                    card.appendChild(link);
+                }
+
+                resultsList.appendChild(card);
+            });
+
+            resultsContainer.appendChild(resultsList);
+        }
+        
+        // --- Función para mostrar errores ---
+        function displayError(message) {
+            resultsContainer.innerHTML = `<p class="text-center text-red-500 py-10">${message}</p>`;
+        }
+
+
+        // --- Event Listener para el formulario de búsqueda ---
+        searchForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const searchTerm = productSearchInput.value.trim();
+            if (!searchTerm) return;
+
+            // Validación de la API Key: Muestra un error si no se ha configurado
+            if (!apiKey || apiKey === "") {
+                displayError("Error: Por favor, configura tu API key en la variable 'apiKey' dentro del código HTML.");
+                return;
+            }
+            
+            showLoader();
+            
+            const prompt = `Busca en internet precios para el producto "${searchTerm}" que se vendan en Argentina. Devuelve una lista de resultados.`;
+
+            // Configuración del payload para la API
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                "producto": { "type": "STRING", "description": "Nombre completo del producto encontrado." },
+                                "vendedor": { "type": "STRING", "description": "Nombre de la tienda o supermercado que lo vende." },
+                                "precio": { "type": "STRING", "description": "Precio del producto con su moneda." },
+                                "enlace": { "type": "STRING", "description": "URL directa a la página del producto." }
+                            },
+                            required: ["producto", "vendedor", "precio", "enlace"]
+                        }
+                    }
+                }
+            };
+            
+            // Lógica para reintentos con exponential backoff
+            const maxRetries = 3;
+            let currentRetry = 0;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            while (currentRetry < maxRetries) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (!response.ok) {
+                        if (response.status === 429) { // Demasiadas solicitudes
+                            currentRetry++;
+                            const delay = Math.pow(2, currentRetry) * 1000;
+                            console.log(`Rate limit exceeded. Retrying in ${delay}ms...`);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            continue;
+                        } else {
+                            throw new Error(`Error en la API: ${response.statusText}`);
+                        }
+                    }
+
+                    const result = await response.json();
+                    const textPart = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (textPart) {
+                        const products = JSON.parse(textPart);
+                        displayResults(products);
+                        return; // Salir del bucle si es exitoso
+                    } else {
+                        throw new Error("No se pudo obtener una respuesta válida del modelo.");
+                    }
+
+                } catch (error) {
+                    console.error('Error al buscar precios:', error);
+                    currentRetry++;
+                    if (currentRetry >= maxRetries) {
+                        displayError('Ocurrió un error al buscar los precios. Por favor, intenta de nuevo.');
+                        return;
+                    }
+                }
+            }
+        });
+    </script>
+
 </body>
 </html>
+
